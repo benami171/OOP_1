@@ -97,7 +97,7 @@ public abstract class ConcretePiece implements Piece {
     }
 
     public ArrayList<Position> getDistinctMoves() {
-        moves.removeFirst();
+        moves.remove(0);
         if(moves.isEmpty()){
             return null;
         }
