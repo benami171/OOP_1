@@ -368,7 +368,7 @@ public class GameLogic implements PlayableLogic {
 
     public Position getKingPosition() {
         ArrayList<Position> kingMoves = ConcretePieceArr[6].getMoves();
-        return kingMoves.getLast();
+        return kingMoves.get(kingMoves.size() - 1);
     }
 
     public boolean isDefendersWon() {
@@ -475,23 +475,23 @@ public class GameLogic implements PlayableLogic {
 
             while (!eatenPawns.isEmpty()) {
 
-                board[eatenPos.getLast().getY()][eatenPos.getLast().getX()] = ConcretePieceArr[eatenPawns.getLast().getNumber()];
-                ConcretePieceArr[eatenPawns.getLast().getNumber()].addMove(new Position(eatenPos.getLast().getX(), eatenPos.getLast().getY()));
+                board[eatenPos.get(eatenPos.size() - 1).getY()][eatenPos.get(eatenPos.size() - 1).getX()] = ConcretePieceArr[eatenPawns.get(eatenPos.size() - 1).getNumber()];
+                ConcretePieceArr[eatenPawns.get(eatenPos.size() - 1).getNumber()].addMove(new Position(eatenPos.get(eatenPos.size() - 1).getX(), eatenPos.get(eatenPos.size() - 1).getY()));
                 if (!allies.isEmpty())
-                    ConcretePieceArr[allies.getLast().getNumber()].puke(); //removing
+                    ConcretePieceArr[allies.get(eatenPos.size() - 1).getNumber()].puke(); //removing
 
-                eatenPos.removeLast();
-                eatenPawns.removeLast();
+                eatenPos.remove(eatenPos.size() - 1);
+                eatenPawns.remove(eatenPos.size() - 1);
 
             }
 
             while (!allies.isEmpty()) {
-                allies.getLast().puke();
-                allies.removeLast();
+                allies.get(eatenPos.size() - 1).puke();
+                allies.remove(eatenPos.size() - 1);
             }
 
-            steps.getLast().removeStep();
-            steps.removeLast();
+            steps.get(eatenPos.size() - 1).removeStep();
+            steps.remove(eatenPos.size() - 1);
 
             //restore stats
             //distance removal + move removal
@@ -604,7 +604,7 @@ public class GameLogic implements PlayableLogic {
         all.addAll(lose);
         // by number of distance than by number in ascending order (d1 prior to d7 if they have the same amount of distance)
         //if the same distance from different teams, the winner will be first.
-        Player winner = all.getFirst().getOwner();
+        Player winner = all.get(0).getOwner();
         all.sort((o1, o2) -> {
             if (o1.getDistance() == o2.getDistance()) {
                 if (o1.getNumber() < o2.getNumber()) {
