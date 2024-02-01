@@ -2,8 +2,6 @@ import java.lang.reflect.Array;
 import java.util.*;
 
 public class GameLogic implements PlayableLogic {
-    // COMMIT TEST
-
     private ConcretePiece[][] board;
     private int player2Counter = 24;
     private final int BOARD_SIZE = 11;
@@ -12,8 +10,9 @@ public class GameLogic implements PlayableLogic {
     private ConcretePlayer currPlayer;
     private boolean isPlayar1turn;
     private ConcretePiece[] ConcretePieceArr;
-    private Stack<Back> backs = new Stack<Back>();
-    private ArrayList<Step> steps = new ArrayList<Step>();
+    // saves curr position and original position, used in undo.
+    private Stack<Back> backs = new Stack<>();
+
 
     public GameLogic() {
         isPlayar1turn = false;
@@ -25,7 +24,7 @@ public class GameLogic implements PlayableLogic {
         player2Pieces();
     }
 
-
+// create the pieces for player 1
     private void player1Pieces() {
         for (int i = 0; i < 13; i++) {
             if (i == 6) {
@@ -62,7 +61,7 @@ public class GameLogic implements PlayableLogic {
         board[7][5] = ConcretePieceArr[12];
         ConcretePieceArr[12].addMove(new Position(5, 7));
     }
-
+// create the pieces for player 2
     private void player2Pieces() {
         for (int i = 13; i < 37; i++) {
             ConcretePieceArr[i] = new Pawn(player2, i - 12);
@@ -155,27 +154,10 @@ public class GameLogic implements PlayableLogic {
             if (b.equals(corner1) || b.equals(corner2) || b.equals(corner3) || b.equals(corner4))
                 return false;
 
-        //adding step to this position
-        Step tmpStep = new Step(b);
 
-        if (!steps.contains(tmpStep)) {
-            steps.add(tmpStep);
-        } else {
-            for (int i = 0; i < steps.size(); i++) {
-                if (tmpStep.equals(steps.get(i)))
-                    steps.get(i).addStep();
-            }
-
-
-        }
         //moving
         board[b.getY()][b.getX()] = board[a.getY()][a.getX()];
         board[a.getY()][a.getX()] = null;
-
-        //adding distance and the move
-//        ConcretePieceArr[board[b.getY()][b.getX()].getNumber()].addMove(new Position(b.getX(),b.getY()));
-//        System.out.println("piece ConcretePieceArr[0] = " + (ConcretePieceArr[board[b.getY()][b.getX()].getNumber()].getNumber() - 1 ));
-//        System.out.println("board number for that piece = " + board[b.getY()][b.getX()].getNumber());
 
 
         //eating
@@ -185,160 +167,96 @@ public class GameLogic implements PlayableLogic {
         ArrayList<Pawn> tmpEaten = new ArrayList<Pawn>();
         ArrayList<Position> tmpPos = new ArrayList<Position>();
 
-        int tmpC = 0;
-        int tmpIndex = -1;
-        Pawn CurrMoved = null;
-        Back back = new Back(a.getX(), a.getY(), b.getX(), b.getY(), a.distance(b), CurrMoved);
+        Back back = new Back(a.getX(), a.getY(), b.getX(), b.getY());
 
         if (!Objects.equals(aPiece.getType(), "♔")) {
             if (isPlayar1turn) {
-
                 if (y != 0 && board[y - 1][x] != null && board[y - 1][x].getOwner() == player2) { //checks if hes not on the sides and that he has an enemy next to him
                     if ((y - 2 < 0) || (board[y - 2][x] != null && board[y - 2][x].getOwner() == player1 && !Objects.equals(board[y - 2][x].getType(), "♔"))) {   //checks if he׳s pinning him to a wall or if he has an ally pinning him
-                        tmpIndex = board[y - 1][x].getNumber(); //eaten index
+                        tmpEaten.add(new Pawn(player2, board[y - 1][x].getNumber())); //add eaten to list
+                        tmpPos.add(new Position(x, y - 1)); // adding dead position
                         board[y - 1][x] = null; //remove eaten
                         ConcretePieceArr[board[y][x].getNumber() - 1].addEat(); //add eat to killer
                         player2Counter--;
-                        if (y - 2 > 0) {
-                            back.addAlly(new Pawn(player1, board[y - 2][x].getNumber())); //add ally to list for back button
-                        }
-                        tmpEaten.add(new Pawn(player2, tmpIndex)); //add eaten to list
-                        tmpC++; //add 1 to eat amount
-                        tmpPos.add(new Position(x, y - 1)); // adding dead position
-
-
                     }
                 }
                 if (y != 10 && board[y + 1][x] != null && board[y + 1][x].getOwner() == player2) { //down
                     if ((y + 2 > 10) || (board[y + 2][x] != null && board[y + 2][x].getOwner() == player1 && !Objects.equals(board[y + 2][x].getType(), "♔"))) {
-                        tmpIndex = board[y + 1][x].getNumber();
+                        tmpEaten.add(new Pawn(player2, board[y + 1][x].getNumber()));
+                        tmpPos.add(new Position(x, y + 1));
                         board[y + 1][x] = null;
                         ConcretePieceArr[board[y][x].getNumber() - 1].addEat();
                         player2Counter--;
-                        if (y + 2 < 10) {
-                            back.addAlly(new Pawn(player1, board[y + 2][x].getNumber()));
-                        }
-                        tmpEaten.add(new Pawn(player2, tmpIndex));
-                        tmpC++;
-                        tmpPos.add(new Position(x, y + 1));
-
                     }
                 }
                 if (x != 0 && board[y][x - 1] != null && board[y][x - 1].getOwner() == player2) { //left
                     if ((x - 2 < 0) || (board[y][x - 2] != null && board[y][x - 2].getOwner() == player1 && !Objects.equals(board[y][x - 2].getType(), "♔"))) {
-                        tmpIndex = board[y][x - 1].getNumber();
+                        tmpEaten.add(new Pawn(player2, board[y][x - 1].getNumber()));
+                        tmpPos.add(new Position(x - 1, y));
                         board[y][x - 1] = null;
                         ConcretePieceArr[board[y][x].getNumber() - 1].addEat();
                         player2Counter--;
-                        if (x - 2 > 0) {
-                            back.addAlly(new Pawn(player1, board[y][x - 2].getNumber()));
-                        }
-                        tmpEaten.add(new Pawn(player2, tmpIndex));
-                        tmpC++;
-                        tmpPos.add(new Position(x - 1, y));
-
-
                     }
                 }
                 if (x != 10 && board[y][x + 1] != null && board[y][x + 1].getOwner() == player2) { //right
                     if ((x + 2 > 10) || (board[y][x + 2] != null && board[y][x + 2].getOwner() == player1 && !Objects.equals(board[y][x + 2].getType(), "♔"))) {
-                        tmpIndex = board[y][x + 1].getNumber();
+                        tmpEaten.add(new Pawn(player2, board[y][x + 1].getNumber()));
+                        tmpPos.add(new Position(x + 1, y));
                         board[y][x + 1] = null;
                         ConcretePieceArr[board[y][x].getNumber() - 1].addEat();
                         player2Counter--;
-                        if (x + 2 < 10) {
-                            back.addAlly(new Pawn(player1, board[y][x + 2].getNumber()));
-                        }
-
-                        tmpEaten.add(new Pawn(player2, tmpIndex));
-                        tmpC++;
-                        tmpPos.add(new Position(x + 1, y));
-
                     }
                 }
-                CurrMoved = new Pawn(player1, board[y][x].getNumber());
 
             } else {
-
                 if (y != 0 && board[y - 1][x] != null && board[y - 1][x].getOwner() == player1 && !Objects.equals(board[y - 1][x].getType(), "♔")) { //up
                     if ((y - 2 < 0) || (board[y - 2][x] != null && board[y - 2][x].getOwner() == player2)) {
-                        tmpIndex = board[y - 1][x].getNumber();
+                        tmpEaten.add(new Pawn(player1, board[y - 1][x].getNumber()));
+                        tmpPos.add(new Position(x, y - 1));
                         board[y - 1][x] = null;
                         ConcretePieceArr[board[y][x].getNumber() - 1].addEat();
-                        if (y - 2 > 0) {
-                            back.addAlly(new Pawn(player1, board[y - 2][x].getNumber()));
-                            ConcretePieceArr[board[y - 2][x].getNumber() - 1].addEat();
-                        }
-
-                        tmpEaten.add(new Pawn(player1, tmpIndex));
-                        tmpC++;
-                        tmpPos.add(new Position(x, y - 1));
-
                     }
                 }
                 if (y != 10 && board[y + 1][x] != null && board[y + 1][x].getOwner() == player1 && !Objects.equals(board[y + 1][x].getType(), "♔")) { //down
                     if ((y + 2 > 10) || (board[y + 2][x] != null && board[y + 2][x].getOwner() == player2)) {
-                        tmpIndex = board[y + 1][x].getNumber();
+                        tmpEaten.add(new Pawn(player1, board[y + 1][x].getNumber()));
+                        tmpPos.add(new Position(x, y + 1));
                         board[y + 1][x] = null;
                         ConcretePieceArr[board[y][x].getNumber() - 1].addEat();
-                        if (y + 2 < 10) {
-                            back.addAlly(new Pawn(player1, board[y + 2][x].getNumber()));
-                            ConcretePieceArr[board[y + 2][x].getNumber() - 1].addEat();
-                        }
-                        tmpEaten.add(new Pawn(player1, tmpIndex));
-                        tmpC++;
-                        tmpPos.add(new Position(x, y + 1));
-
                     }
                 }
                 if (x != 0 && board[y][x - 1] != null && board[y][x - 1].getOwner() == player1 && !Objects.equals(board[y][x - 1].getType(), "♔")) { //left
                     if ((x - 2 < 0) || (board[y][x - 2] != null && board[y][x - 2].getOwner() == player2)) {
-                        tmpIndex = board[y][x - 1].getNumber();
+                        tmpEaten.add(new Pawn(player1, board[y][x - 1].getNumber()));
+                        tmpPos.add(new Position(x - 1, y));
                         board[y][x - 1] = null;
                         ConcretePieceArr[board[y][x].getNumber() - 1].addEat();
-                        if (x - 2 > 0) {
-                            back.addAlly(new Pawn(player1, board[y][x - 2].getNumber()));
-                            ConcretePieceArr[board[y][x - 2].getNumber() - 1].addEat();
-                        }
-                        tmpEaten.add(new Pawn(player1, tmpIndex));
-                        tmpC++;
-                        tmpPos.add(new Position(x - 1, y));
-
                     }
                 }
                 if (x != 10 && board[y][x + 1] != null && board[y][x + 1].getOwner() == player1 && !Objects.equals(board[y][x + 1].getType(), "♔")) { //right
                     if ((x + 2 > 10) || (board[y][x + 2] != null && board[y][x + 2].getOwner() == player2)) {
-                        tmpIndex = board[y][x + 1].getNumber();
+                        tmpEaten.add(new Pawn(player1, board[y][x + 1].getNumber()));
+                        tmpPos.add(new Position(x + 1, y));
                         board[y][x + 1] = null;
                         ConcretePieceArr[board[y][x].getNumber() - 1].addEat();
-                        if (x + 2 < 10) {
-                            back.addAlly(new Pawn(player1, board[y][x + 2].getNumber()));
-                            ConcretePieceArr[board[y][x + 2].getNumber() - 1].addEat();
-                        }
-                        tmpEaten.add(new Pawn(player1, tmpIndex));
-                        tmpC++;
-                        tmpPos.add(new Position(x + 1, y));
-
                     }
                 }
-                CurrMoved = new Pawn(player2, board[y][x].getNumber());
             }
         }
 
+        // helps us in undo
         back.setEaten(tmpEaten);
-        back.setEatNum(tmpC);
         back.setEatenPos(tmpPos);
         backs.add(back);
-
         isPlayar1turn = !isPlayar1turn;
         ((ConcretePiece) aPiece).addMove(b);
 
         if(isGameFinished()){
-           if(!isPlayar1turn) {
-               printFinishedGame(true);
-           } else {
-               printFinishedGame(false);
-           }
+            if(!isPlayar1turn) {
+                printFinishedGame(true);
+            } else {
+                printFinishedGame(false);
+            }
         }
         return true;
     }
@@ -372,6 +290,7 @@ public class GameLogic implements PlayableLogic {
     }
 
     public boolean isDefendersWon() {
+        // check if king is in one of the corners
         ConcretePiece corner1 = board[0][0];
         ConcretePiece corner2 = board[0][10];
         ConcretePiece corner3 = board[10][0];
@@ -426,7 +345,6 @@ public class GameLogic implements PlayableLogic {
             if (board[y][x + 1].getOwner() == player2)
                 count++;
         }
-
         if (count == temp) {
             player2.addWin();
             return true;
@@ -451,19 +369,18 @@ public class GameLogic implements PlayableLogic {
         player2.resetWins();
     }
 
+    //    ==================================== UNDO ======================================
+    //    un
     @Override
     public void undoLastMove() {
-
         if (!backs.isEmpty()) {
             Back tmp = backs.pop();
             isPlayar1turn = !isPlayar1turn;
-            int eatNum = tmp.getEatNum();
 
             ArrayList<Pawn> eatenPawns = tmp.getEaten();
-            ArrayList<Pawn> allies = tmp.getAllies();
             ArrayList<Position> eatenPos = tmp.getEatenPositions();
 
-
+            int eatNum = eatenPawns.size();
             while (eatNum != 0) { //removing eating amount
                 ConcretePieceArr[board[tmp.getCurrY()][tmp.getCurrX()].getNumber() - 1].puke();
                 eatNum--;
@@ -471,32 +388,23 @@ public class GameLogic implements PlayableLogic {
             board[tmp.getOrgY()][tmp.getOrgX()] = board[tmp.getCurrY()][tmp.getCurrX()]; //move back the piece we moved
             board[tmp.getCurrY()][tmp.getCurrX()] = null; //removing from last positions
 
+            if(board[tmp.getOrgY()][tmp.getOrgX()].getOwner() == player1) {
+                ConcretePieceArr[board[tmp.getOrgY()][tmp.getOrgX()].getNumber() - 1].removeLastMove(); //remove distance and last move
+            }else{
+                ConcretePieceArr[board[tmp.getOrgY()][tmp.getOrgX()].getNumber() - 1 + 13].removeLastMove(); //remove distance and last move
+            }
+
             //restore eaten pieces
-
-            while (!eatenPawns.isEmpty()) {
-
-                board[eatenPos.get(eatenPos.size() - 1).getY()][eatenPos.get(eatenPos.size() - 1).getX()] = ConcretePieceArr[eatenPawns.get(eatenPos.size() - 1).getNumber()];
-                ConcretePieceArr[eatenPawns.get(eatenPos.size() - 1).getNumber()].addMove(new Position(eatenPos.get(eatenPos.size() - 1).getX(), eatenPos.get(eatenPos.size() - 1).getY()));
-                if (!allies.isEmpty())
-                    ConcretePieceArr[allies.get(eatenPos.size() - 1).getNumber()].puke(); //removing
-
-                eatenPos.remove(eatenPos.size() - 1);
-                eatenPawns.remove(eatenPos.size() - 1);
-
+            while (!eatenPawns.isEmpty() && !eatenPos.isEmpty()) {
+                if (eatenPawns.get(0).getOwner() == player1){
+                    board[eatenPos.get(0).getY()][eatenPos.get(0).getX()] = ConcretePieceArr[eatenPawns.get(0).getNumber() - 1];
+                }else{
+                    board[eatenPos.get(0).getY()][eatenPos.get(0).getX()] = ConcretePieceArr[eatenPawns.get(0).getNumber() - 1 + 13];
+                }
+                ConcretePieceArr[eatenPawns.get(0).getNumber() - 1].addMove(new Position(eatenPos.get(0).getX(), eatenPos.get(0).getY()));
+                eatenPos.remove(0);
+                eatenPawns.remove(0);
             }
-
-            while (!allies.isEmpty()) {
-                allies.get(eatenPos.size() - 1).puke();
-                allies.remove(eatenPos.size() - 1);
-            }
-
-            steps.get(eatenPos.size() - 1).removeStep();
-            steps.remove(eatenPos.size() - 1);
-
-            //restore stats
-            //distance removal + move removal
-
-            //ConcretePieceArr[board[tmp.getCurrY()][tmp.getCurrX()].getNumber()].removeMove(tmp.getDist());
         }
     }
 
@@ -506,11 +414,10 @@ public class GameLogic implements PlayableLogic {
     }
 
     //    ==================================== COMPARATORS ======================================
-//    Compare ConcretePieceArr by the winner and the moves
     public void printFinishedGame(boolean isDefendersWon) {
-        ArrayList<ConcretePiece> win = new ArrayList<ConcretePiece>();
-        ArrayList<ConcretePiece> lose = new ArrayList<ConcretePiece>();
-//        Iterate through ConcretePieceArr and add the first 12 pieces to 'win' and the rest to 'lose'
+        ArrayList<ConcretePiece> win = new ArrayList<>();
+        ArrayList<ConcretePiece> lose = new ArrayList<>();
+    //    Iterate through ConcretePieceArr and add the first 12 pieces to 'win' and the rest to 'lose'
         for (int i = 0; i < ConcretePieceArr.length; i++) {
             if (i < 13) {
                 win.add(ConcretePieceArr[i]);
@@ -518,7 +425,7 @@ public class GameLogic implements PlayableLogic {
                 lose.add(ConcretePieceArr[i]);
             }
         }
-        printByMoves(win, lose);
+        printByMoves(lose, win);
         System.out.println("***************************************************************************");
         printByKills(!isDefendersWon);
         System.out.println("***************************************************************************");
@@ -552,7 +459,6 @@ public class GameLogic implements PlayableLogic {
             }
             return o1.getMoves().size() - o2.getMoves().size();
         });
-
         for (ConcretePiece piece : lose) {
             if (piece.getMoves().size() <= 1)
                 continue;
@@ -566,7 +472,8 @@ public class GameLogic implements PlayableLogic {
     }
 
     private void printByKills(boolean isDefendersWon) {
-        ArrayList<ConcretePiece> relevantPieces = new ArrayList<ConcretePiece>();
+        // add all pieces that killed to relevantPieces
+        ArrayList<ConcretePiece> relevantPieces = new ArrayList<>();
         for (int i = 0; i < ConcretePieceArr.length; i++) {
             ConcretePiece piece = ConcretePieceArr[i];
             if (piece.getEatAmount() > 0) {
@@ -575,6 +482,7 @@ public class GameLogic implements PlayableLogic {
         }
 
         Comparator<ConcretePiece> killCompare = ((o1, o2) -> {
+            // Sort by highest kill count first then by lowest number
             if (o1.getEatAmount() > o2.getEatAmount()) {
                 return-1;
             }else if (o1.getEatAmount() < o2.getEatAmount()) {
@@ -585,8 +493,9 @@ public class GameLogic implements PlayableLogic {
             else if(o1.getNumber() != o2.getNumber()){
                 return o1.getNumber() - o2.getNumber();
             }
+            // If counts are equal, sort by winner first
             if (isDefendersWon) {
-               return o1.getOwner().isPlayerOne() ? -1 : 1;
+                return o1.getOwner().isPlayerOne() ? -1 : 1;
             } else {
                 return o1.getOwner().isPlayerOne() ? 1 : -1;
             }
@@ -599,11 +508,11 @@ public class GameLogic implements PlayableLogic {
     }
 
     public void printByDistance(ArrayList<ConcretePiece> win, ArrayList<ConcretePiece> lose) {
-        ArrayList<ConcretePiece> all = new ArrayList<ConcretePiece>();
+        ArrayList<ConcretePiece> all = new ArrayList<>();
         all.addAll(win);
         all.addAll(lose);
-        // by number of distance than by number in ascending order (d1 prior to d7 if they have the same amount of distance)
-        //if the same distance from different teams, the winner will be first.
+        // by number of distance than by number in ascending order (d1 prior to d7 if they have the same distance)
+        // if same distance from different teams, the winner will be first.
         Player winner = all.get(0).getOwner();
         all.sort((o1, o2) -> {
             if (o1.getDistance() == o2.getDistance()) {
@@ -615,7 +524,6 @@ public class GameLogic implements PlayableLogic {
             }
             return o1.getDistance() - o2.getDistance();
         });
-
         all.sort((o1, o2) -> {
             if ((o1.getDistance() == o2.getDistance()) && (o1.getOwner() == winner && o2.getOwner() != winner)) {
                 return 1;
@@ -624,9 +532,6 @@ public class GameLogic implements PlayableLogic {
             }
             return 0;
         });
-
-
-
         for (int i = all.size() - 1; i > 0; i--) {
             ConcretePiece piece = all.get(i);
             if (piece.getDistance() <= 0)
@@ -635,54 +540,50 @@ public class GameLogic implements PlayableLogic {
         }
     }
 
+
+    //    This method analyzes the movement of ConcretePiece objects and prints the count of distinct pieces
+    //    that have visited each unique position. Positions are sorted by the frequency of visits in descending order,
+    //    with ties broken by the lowest X and Y values. The results are printed,
+    //    ensuring each position is only considered once, even if multiple pieces have visited it.
     public void printPositionByMoves() {
-    HashMap<Position, Integer> map = new HashMap<>();
-    HashSet<String> printedPositions = new HashSet<>();
-
-            for (ConcretePiece piece : ConcretePieceArr) {
-        if (piece.getMoves().size() <= 1)
-            continue;
-
-        HashSet<Position> set = new HashSet<>(piece.getMoves());
-
-        for (Position position : set) {
-            for (Map.Entry<Position, Integer> entry : map.entrySet()) {
-                if (entry.getKey().equals(position)) {
-                    entry.setValue(entry.getValue() + 1);
+        HashMap<Position, Integer> map = new HashMap<>();
+        HashSet<String> printedPositions = new HashSet<>();
+        for (ConcretePiece piece : ConcretePieceArr) {
+            if (piece.getMoves().size() <= 1)
+                continue;
+            HashSet<Position> set = new HashSet<>(piece.getMoves());
+            for (Position position : set) {
+                for (Map.Entry<Position, Integer> entry : map.entrySet()) {
+                    if (entry.getKey().equals(position)) {
+                        entry.setValue(entry.getValue() + 1);
+                    }
+                }
+                if (!map.containsKey(position)) {
+                    map.put(position, 1);
                 }
             }
-
-            if (!map.containsKey(position)) {
-                map.put(position, 1);
+        }
+        List<Map.Entry<Position, Integer>> sortedEntries = new ArrayList<>(map.entrySet());
+        sortedEntries.sort((entry1, entry2) -> {
+            // Sort by highest count first
+            int countComparison = Integer.compare(entry2.getValue(), entry1.getValue());
+            if (countComparison != 0) {
+                return countComparison;
+            }
+            // If counts are equal, sort by lowest X
+            int xComparison = Integer.compare(entry1.getKey().getX(), entry2.getKey().getX());
+            if (xComparison != 0) {
+                return xComparison;
+            }
+            // If X values are equal, sort by lowest Y
+            return Integer.compare(entry1.getKey().getY(), entry2.getKey().getY());
+        });
+        for (Map.Entry<Position, Integer> entry : sortedEntries) {
+            String positionString = entry.getKey().getX() + "," + entry.getKey().getY();
+            if (entry.getValue() > 1 && printedPositions.add(positionString)) {
+                System.out.println(entry.getKey() + "" + entry.getValue() + " pieces");
             }
         }
     }
-
-    List<Map.Entry<Position, Integer>> sortedEntries = new ArrayList<>(map.entrySet());
-            sortedEntries.sort((entry1, entry2) -> {
-        // Sort by highest count first
-        int countComparison = Integer.compare(entry2.getValue(), entry1.getValue());
-        if (countComparison != 0) {
-            return countComparison;
-        }
-
-        // If counts are equal, sort by lowest X
-        int xComparison = Integer.compare(entry1.getKey().getX(), entry2.getKey().getX());
-        if (xComparison != 0) {
-            return xComparison;
-        }
-
-        // If X values are equal, sort by lowest Y
-        return Integer.compare(entry1.getKey().getY(), entry2.getKey().getY());
-    });
-
-            for (Map.Entry<Position, Integer> entry : sortedEntries) {
-        String positionString = entry.getKey().getX() + "," + entry.getKey().getY();
-        if (entry.getValue() > 1 && printedPositions.add(positionString)) {
-            System.out.println(entry.getKey() + "" + entry.getValue() + " pieces");
-        }
-    }
 }
-}
-
 

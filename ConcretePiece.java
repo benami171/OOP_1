@@ -26,8 +26,13 @@ public abstract class ConcretePiece implements Piece {
         distance += a.distance(b);
     }
 
-    public void removeDistance(int dist) {
-        distance -= dist;
+    public void removeLastMove() {
+
+        if(moves.size() >= 2)
+            distance -= moves.get(moves.size()-1).distance(moves.get(moves.size()-2)) ;
+
+        if(moves.size() > 1)
+            moves.remove(moves.size() -1);
     }
 
 
@@ -46,33 +51,7 @@ public abstract class ConcretePiece implements Piece {
         }
         moves.add(a);
     }
-//    public void printMoves(){
-//        if(number == 7){
-//            System.out.print("K" + number + ": ");
-//        } else if(number <= 12) {
-//            System.out.print("D" + number + ": ");
-//        }else {
-//            System.out.print("A" + number + ": ");
-//        }
-//
-//        if(moves != null) {
-//            for (Position move : moves) {
-//                System.out.print(move);
-//            }
-//        }
-//        this.moves = null;
-//        System.out.println();
-//
-//    }
 
-
-    public void removeMove(int distance){
-        if (!moves.isEmpty()) {
-            this.distance -= distance;
-            moves.remove(moves.size() - 1);
-        }
-
-    }
 
     @Override
     public String toString() {
@@ -87,7 +66,7 @@ public abstract class ConcretePiece implements Piece {
     public int getEatAmount() {
         return eatAmount;
     }
-     public void addEat(){ eatAmount++; }
+    public void addEat(){ eatAmount++; }
     public void puke() {eatAmount--; }
 
     public abstract String getName();
